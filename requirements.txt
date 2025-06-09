@@ -1,0 +1,7 @@
+streamlit
+streamlit-chat
+openai
+textblob
+altair
+pandas
+requests
