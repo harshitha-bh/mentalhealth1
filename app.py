@@ -19,7 +19,7 @@ body { background-color: #f7f2fc; }
     max-width: 80%; word-wrap: break-word;
     box-shadow: 1px 2px 6px rgba(0,0,0,0.08);
 }
-.user { background: #ffecf2; color: #8e005e; margin-left: auto; text-align: right; }
+.user { background: #ffe0f0; color: #8e005e; margin-left: auto; text-align: right; }
 .bot { background: #e0f7fa; color: #01579b; margin-right: auto; text-align: left; }
 </style>
 """, unsafe_allow_html=True)
@@ -48,9 +48,9 @@ def save_users(users):
 def get_chatbot_reply(user_input):
     messages = [
         {"role": "system", "content": (
-            "You are Solace AI, a friendly, chill chatbot for mental health support. "
-            "If the user expresses emotions or struggles, respond with empathy, motivational quotes, or calming tips. "
-            "If user chats casually, just respond like a close friend with emojis in Tenglish (Telugu + English style)."
+            "You are Solace AI, a friendly and supportive chatbot for mental health. "
+            "If the user shares feelings, provide kind support, motivational quotes, or calming exercises. "
+            "If chatting normally, just be chill, use emojis, and talk like a close friend in Tenglish."
         )},
         {"role": "user", "content": user_input}
     ]
@@ -61,9 +61,13 @@ def get_chatbot_reply(user_input):
     )
     return response.choices[0].message.content.strip()
 
-# ========== SIGNUP ==========
+# ========== SIGNUP PAGE ==========
 def signup_page():
     st.title("📝 Create Account")
+    if st.session_state.feedback_msg:
+        st.success(st.session_state.feedback_msg)
+        st.session_state.feedback_msg = ""
+
     with st.form("signup_form"):
         uname = st.text_input("Username")
         pwd = st.text_input("Password", type="password")
@@ -81,16 +85,16 @@ def signup_page():
             else:
                 users[uname] = pwd
                 save_users(users)
-                st.session_state.page = "Login"
                 st.session_state.feedback_msg = "🎉 Signup successful! Please login."
-                st.experimental_rerun()
+                st.session_state.page = "Login"
 
-# ========== LOGIN ==========
+# ========== LOGIN PAGE ==========
 def login_page():
     st.title("🔐 Login to Solace AI")
     if st.session_state.feedback_msg:
         st.success(st.session_state.feedback_msg)
         st.session_state.feedback_msg = ""
+
     with st.form("login_form"):
         uname = st.text_input("Username")
         pwd = st.text_input("Password", type="password")
@@ -102,10 +106,9 @@ def login_page():
                 st.session_state.auth = True
                 st.session_state.username = uname
                 st.session_state.page = "Dashboard"
-                st.success(f"Welcome back, {uname}! 🫶")
-                st.experimental_rerun()
+                st.session_state.feedback_msg = "✅ Logged in successfully!"
             else:
-                st.error("Invalid username or password. Try again or Sign up.")
+                st.error("❌ Invalid username or password.")
 
 # ========== DASHBOARD ==========
 def dashboard():
@@ -114,7 +117,6 @@ def dashboard():
     st.markdown("Click below to start chatting:")
     if st.button("💬 Start Chat"):
         st.session_state.show_chatbot = True
-        st.experimental_rerun()
 
 # ========== CHATBOT PAGE ==========
 def chat_page():
@@ -128,7 +130,7 @@ def chat_page():
 
     # Input box
     with st.form("chat_form", clear_on_submit=True):
-        user_input = st.text_input("Type your message 👇", key="chat_input")
+        user_input = st.text_input("Type your message 👇")
         send = st.form_submit_button("Send")
 
         if send and user_input.strip():
@@ -136,20 +138,16 @@ def chat_page():
             with st.spinner("Thinking... 🤔"):
                 reply = get_chatbot_reply(user_input)
             st.session_state.chat.append(("bot", reply))
-            st.experimental_rerun()
 
     # Sidebar
     st.sidebar.title("🔐 Account")
     st.sidebar.markdown(f"**Logged in as:** {st.session_state.username}")
     if st.sidebar.button("🚪 Logout"):
-        for key in st.session_state.keys():
-            st.session_state[key] = False if isinstance(st.session_state[key], bool) else ""
+        for key in list(st.session_state.keys()):
+            del st.session_state[key]
         st.session_state.page = "Login"
-        st.session_state.chat = []
-        st.session_state.feedback_msg = "👋 You’ve been logged out."
-        st.experimental_rerun()
 
-# ========== ROUTING ==========
+# ========== PAGE ROUTER ==========
 if not st.session_state.auth:
     st.sidebar.title("Navigation")
     st.session_state.page = st.sidebar.radio("Choose Page", ["Login", "Sign Up"])
