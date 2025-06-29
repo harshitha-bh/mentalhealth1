@@ -8,7 +8,7 @@ st.set_page_config("Solace AI 💬", layout="centered")
 openai.api_key = st.secrets["OPENAI_API_KEY"]
 USER_FILE = "users.json"
 
-# === State Init ===
+# === Initialize session state ===
 if "auth" not in st.session_state:
     st.session_state.auth = False
 if "page" not in st.session_state:
@@ -17,6 +17,8 @@ if "chat" not in st.session_state:
     st.session_state.chat = []
 if "username" not in st.session_state:
     st.session_state.username = ""
+if "chat_input" not in st.session_state:
+    st.session_state.chat_input = ""
 
 # === Load / Save users ===
 def load_users():
@@ -29,10 +31,10 @@ def save_users(users):
     with open(USER_FILE, "w") as f:
         json.dump(users, f, indent=2)
 
-# === Get reply from OpenAI ===
+# === Get OpenAI reply ===
 def get_reply(user_input):
     messages = [
-        {"role": "system", "content": "You're Solace AI, a supportive and friendly chatbot who responds casually like a close friend. If user sounds sad, offer motivation. Otherwise, chat normally using emojis."},
+        {"role": "system", "content": "You're Solace AI, a friendly, caring mental health support chatbot. If user expresses feelings, give kind response + quote. If they chat normally, just chat casually with emojis."},
         {"role": "user", "content": user_input}
     ]
     response = openai.chat.completions.create(
@@ -44,14 +46,14 @@ def get_reply(user_input):
 
 # === Signup Page ===
 def signup_page():
-    st.title("📝 Create an Account")
+    st.title("📝 Sign Up")
     new_user = st.text_input("Choose a username", key="signup_user")
     new_pass = st.text_input("Choose a password", type="password", key="signup_pass")
     confirm = st.text_input("Confirm password", type="password", key="signup_confirm")
     if st.button("Sign Up"):
         users = load_users()
         if not new_user or not new_pass:
-            st.warning("All fields required.")
+            st.warning("Please fill all fields.")
         elif new_user in users:
             st.error("Username already exists.")
         elif new_pass != confirm:
@@ -73,14 +75,19 @@ def login_page():
             st.session_state.auth = True
             st.session_state.username = user
             st.session_state.chat = []
-            st.success("✅ Login successful!")
+            st.success("✅ Login successful! Welcome back!")
             st.session_state.page = "Chat"
         else:
-            st.error("❌ Incorrect login. Try again or sign up.")
+            st.error("❌ Invalid login. Please sign up if you're new.")
 
 # === Chat Page ===
 def chat_page():
-    st.markdown(f"<h2 style='color:#6a1b9a;'>Welcome, {st.session_state.username} 🌸</h2>", unsafe_allow_html=True)
+    st.markdown(
+        "<h2 style='color:#6a1b9a;'>🧠 Welcome to Solace AI</h2>"
+        "<p style='color:#333;'>This is your personal <b>Mental Health Support Chatbot</b>. "
+        "Feel free to share how you're feeling or just chat normally. I'm here for you 💬</p>",
+        unsafe_allow_html=True,
+    )
     st.divider()
 
     for sender, msg in st.session_state.chat:
@@ -92,20 +99,22 @@ def chat_page():
             unsafe_allow_html=True,
         )
 
-    with st.form("chat_form", clear_on_submit=True):
-        user_input = st.text_input("Type your message...")
-        send = st.form_submit_button("Send")
-        if send and user_input:
-            st.session_state.chat.append(("user", user_input))
-            reply = get_reply(user_input)
-            st.session_state.chat.append(("bot", reply))
+    # Input box works with Enter key
+    user_input = st.text_input("Type your message and press Enter", key="chat_input", placeholder="Tell me what's on your mind...")
+
+    if user_input:
+        st.session_state.chat.append(("user", user_input))
+        reply = get_reply(user_input)
+        st.session_state.chat.append(("bot", reply))
+        st.session_state.chat_input = ""  # Clear input automatically
+        st.rerun()  # Refresh to show new message
 
     if st.sidebar.button("Logout"):
-        for key in ["auth", "username", "chat", "page"]:
+        for key in ["auth", "username", "chat", "page", "chat_input"]:
             st.session_state.pop(key, None)
         st.rerun()
 
-# === Page Control ===
+# === Main App Control ===
 if not st.session_state.auth:
     st.sidebar.title("🔄 Navigation")
     st.session_state.page = st.sidebar.radio("Choose", ["Login", "Sign Up"])
