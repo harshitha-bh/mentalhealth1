@@ -1,132 +1,141 @@
 import streamlit as st
-import openai
-import os
 import json
+import os
+import uuid
+import openai
 
-st.set_page_config(page_title="Solace AI - Mental Health Companion", layout="centered")
+st.set_page_config(page_title="Solace AI - Mental Health Support", layout="centered")
 
-# Set OpenAI API Key
+# Load or create users database
+USER_DB = "users.json"
+if not os.path.exists(USER_DB):
+    with open(USER_DB, "w") as f:
+        json.dump({}, f)
+
+def load_users():
+    with open(USER_DB, "r") as f:
+        return json.load(f)
+
+def save_users(users):
+    with open(USER_DB, "w") as f:
+        json.dump(users, f, indent=4)
+
+# Style (injected CSS)
+st.markdown("""
+    <style>
+        body { background-color: #f7f6fb; }
+        .stTextInput > div > div > input {
+            color: #333;
+            font-weight: 500;
+            background-color: #ffffff;
+            border-radius: 10px;
+        }
+        .stButton>button {
+            background-color: #6a8caf;
+            color: white;
+            border-radius: 8px;
+            padding: 8px 16px;
+        }
+        .user-message { background-color: #e0f7fa; padding: 10px; border-radius: 8px; margin-bottom: 8px; }
+        .bot-message { background-color: #fce4ec; padding: 10px; border-radius: 8px; margin-bottom: 8px; }
+    </style>
+""", unsafe_allow_html=True)
+
+# OpenAI API Key (must be set in Streamlit Secrets for deployment)
 openai.api_key = st.secrets["OPENAI_API_KEY"]
 
-# Initialize session state
+def generate_reply(message_history):
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=message_history,
+        temperature=0.7,
+        max_tokens=300
+    )
+    return response.choices[0].message["content"].strip()
+
+# Session initialization
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
 if "username" not in st.session_state:
     st.session_state.username = ""
-if "chat_history" not in st.session_state:
-    st.session_state.chat_history = []
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+if "mode" not in st.session_state:
+    st.session_state.mode = "login"
 
-USER_FILE = "users.json"
-
-# Load & Save users
-def load_users():
-    if os.path.exists(USER_FILE):
-        with open(USER_FILE, "r") as f:
-            return json.load(f)
-    return {}
-
-def save_users(users):
-    with open(USER_FILE, "w") as f:
-        json.dump(users, f)
-
-# Get OpenAI reply
-def get_chatbot_reply(user_msg):
-    system_prompt = (
-        "You're Solace AI, a kind and friendly mental health support chatbot. "
-        "When users share emotional or personal things, reply with empathy, quotes, and calming techniques. "
-        "If they chat casually, just chat back like a close friend using emojis and supportive words."
-    )
-
-    messages = [{"role": "system", "content": system_prompt}]
-    messages += [{"role": "user", "content": user_msg}]
-
-    try:
-        response = openai.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=messages,
-            temperature=0.7,
-            max_tokens=500
-        )
-        return response.choices[0].message.content.strip()
-    except Exception as e:
-        return f"⚠️ Error: {e}"
-
-# Sign Up
-def signup():
-    st.title("📝 Create New Account")
-    new_user = st.text_input("Username")
-    new_pass = st.text_input("Password", type="password")
-    confirm_pass = st.text_input("Confirm Password", type="password")
-    if st.button("Sign Up"):
+# Auth Pages
+def signup_page():
+    st.title("🧾 Sign Up")
+    email = st.text_input("Email")
+    password = st.text_input("Password", type="password")
+    if st.button("Create Account"):
         users = load_users()
-        if new_user in users:
-            st.error("❌ Username already exists!")
-        elif new_pass != confirm_pass:
-            st.warning("⚠️ Passwords do not match.")
-        elif not new_user or not new_pass:
-            st.warning("Please fill all the fields.")
+        if email in users:
+            st.warning("🚫 Email already exists. Please log in.")
         else:
-            users[new_user] = new_pass
+            users[email] = {"password": password}
             save_users(users)
-            st.success("✅ Signup successful! Now you can log in.")
+            st.success("✅ Signup successful! Please log in.")
+            st.session_state.mode = "login"
 
-# Login
-def login():
-    st.title("🔐 Login to Solace AI")
-    username = st.text_input("Username")
+def login_page():
+    st.title("🔐 Login")
+    email = st.text_input("Email")
     password = st.text_input("Password", type="password")
     if st.button("Login"):
         users = load_users()
-        if username in users and users[username] == password:
+        if email in users and users[email]["password"] == password:
             st.session_state.authenticated = True
-            st.session_state.username = username
-            st.success(f"✅ Welcome back, {username}!")
+            st.session_state.username = email
+            st.session_state.mode = "chat"
+            st.success("✅ Logged in successfully!")
         else:
-            st.error("❌ Invalid credentials. Please sign up if you're new.")
+            st.warning("❌ Incorrect credentials or not signed up. Please try again.")
 
 # Chat Page
-def chat_interface():
-    st.markdown(f"<h3 style='color:#6a1b9a;'>💬 Welcome, {st.session_state.username}</h3>", unsafe_allow_html=True)
-    st.caption("You're now chatting with Solace AI. Feel free to share anything on your mind 💙")
+def chat_page():
+    st.title("🧠 Solace AI - Mental Health Support Chatbot")
+    st.markdown("Welcome to your safe space. Share your thoughts, or just chat casually 😊")
 
-    # Display chat history
-    for role, msg in st.session_state.chat_history:
-        if role == "user":
-            st.markdown(f"<div style='text-align:right; background-color:#fce4ec; padding:10px; border-radius:10px; margin:5px;'>{msg}</div>", unsafe_allow_html=True)
-        else:
-            st.markdown(f"<div style='text-align:left; background-color:#e8f5e9; padding:10px; border-radius:10px; margin:5px;'>{msg}</div>", unsafe_allow_html=True)
+    # Display past messages
+    for role, msg in st.session_state.messages:
+        style = "user-message" if role == "user" else "bot-message"
+        st.markdown(f"<div class='{style}'>{'🧍‍♀️' if role=='user' else '🤖'} {msg}</div>", unsafe_allow_html=True)
 
-    # Chat input box
-    user_input = st.text_input("Type your message here...", key="user_input", placeholder="Talk to Solace AI 💬")
+    # Chat input
+    user_input = st.text_input("Type your message", key="chat_input")
 
     if st.button("Send"):
-        if user_input.strip() == "":
-            st.warning("Please type something before sending.")
-        else:
-            st.session_state.chat_history.append(("user", user_input))
-            reply = get_chatbot_reply(user_input)
-            st.session_state.chat_history.append(("bot", reply))
-            st.session_state["user_input"] = ""  # Clear input box
+        if user_input.strip():
+            st.session_state.messages.append(("user", user_input))
+            mood_keywords = ["sad", "depressed", "tired", "angry", "lonely", "worried", "upset"]
+            emotional = any(word in user_input.lower() for word in mood_keywords)
 
-    if st.button("Logout"):
-        st.session_state.authenticated = False
-        st.session_state.username = ""
-        st.session_state.chat_history = []
-        st.success("🔒 Logged out successfully.")
+            prompt = (
+                "You are a friendly and emotionally intelligent chatbot named Solace AI. "
+                "When the user shares emotional distress, you respond supportively with empathy, quotes, and exercises. "
+                "If they chat normally, respond like a fun and casual friend using emojis."
+            )
 
-# Main
+            message_history = [{"role": "system", "content": prompt}]
+            for role, msg in st.session_state.messages[-5:]:
+                message_history.append({"role": role, "content": msg})
+
+            reply = generate_reply(message_history)
+            st.session_state.messages.append(("assistant", reply))
+            st.session_state.chat_input = ""  # Clear input
+
+# App Flow
 def main():
-    st.markdown("<h1 style='text-align:center; color:#4a148c;'>Solace AI</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align:center; font-size:18px;'>Your personal mental health support companion 🌸</p>", unsafe_allow_html=True)
-    st.divider()
-
     if not st.session_state.authenticated:
-        page = st.radio("Choose", ["Login", "Sign Up"], horizontal=True)
-        if page == "Login":
-            login()
+        if st.session_state.mode == "signup":
+            signup_page()
         else:
-            signup()
+            login_page()
+            st.markdown("👉 Don't have an account? [Sign up here](#)", unsafe_allow_html=True)
+            if st.button("Go to Signup"):
+                st.session_state.mode = "signup"
     else:
-        chat_interface()
+        chat_page()
 
 main()
