@@ -14,7 +14,8 @@ if not os.path.exists(USER_FILE):
 
 # --- Load and Save User Data ---
 def load_users():
-    return json.load(open(USER_FILE))
+    with open(USER_FILE, "r") as f:
+        return json.load(f)
 
 def save_users(users):
     with open(USER_FILE, "w") as f:
@@ -73,12 +74,12 @@ def login_page():
         pwd = st.text_input("Password", type="password")
         login = st.form_submit_button("Login")
         if login:
-            if uname in st.session_state.users and st.session_state.users[uname] == pwd:
-                st.success(f"✅ Logged in successfully! Welcome, {uname} 🎉")
+            users = load_users()
+            if uname in users and users[uname] == pwd:
                 st.session_state.auth = True
                 st.session_state.username = uname
+                st.success(f"✅ Logged in successfully! Welcome, {uname} 🎉")
                 st.session_state.page = "Dashboard"
-                st.rerun()
             else:
                 st.error("❌ Invalid credentials. Please sign up if you’re new.")
 
@@ -92,14 +93,15 @@ def signup_page():
         if signup:
             if not uname or not pwd:
                 st.warning("⚠️ Please fill all fields.")
-            elif uname in st.session_state.users:
-                st.error("⚠️ Username already exists. Try a different one.")
             else:
-                st.session_state.users[uname] = pwd
-                save_users(st.session_state.users)
-                st.success("🎊 Signed up successfully! You can now log in.")
-                st.session_state.page = "Login"
-                st.rerun()
+                users = load_users()
+                if uname in users:
+                    st.error("⚠️ Username already exists. Try a different one.")
+                else:
+                    users[uname] = pwd
+                    save_users(users)
+                    st.success("🎊 Signed up successfully! You can now log in.")
+                    st.session_state.page = "Login"
 
 # --- Dashboard After Login ---
 def dashboard():
@@ -140,7 +142,10 @@ def chat_page():
 if not st.session_state.auth:
     st.sidebar.title("🔐 Access")
     st.session_state.page = st.sidebar.radio("Go to", ["Login", "Sign Up"])
-    login_page() if st.session_state.page == "Login" else signup_page()
+    if st.session_state.page == "Login":
+        login_page()
+    else:
+        signup_page()
 elif st.session_state.show_chatbot:
     chat_page()
 else:
