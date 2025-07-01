@@ -88,26 +88,48 @@ def login_page():
                 st.error("❌ Invalid username or password. Please sign up if you're new.")
 
 # --- Signup Page ---
+# --- Signup Page ---
 def signup_page():
     st.title("📝 Sign Up for Solace AI")
+
+    # Maintain signup state flags
+    if "signup_success" not in st.session_state:
+        st.session_state.signup_success = False
+    if "signup_error" not in st.session_state:
+        st.session_state.signup_error = ""
+
     with st.form("signup_form", clear_on_submit=True):
         uname = st.text_input("Choose a Username")
         pwd = st.text_input("Password", type="password")
         confirm_pwd = st.text_input("Confirm Password", type="password")
         signup_btn = st.form_submit_button("Sign Up")
+
         if signup_btn:
             if not uname or not pwd or not confirm_pwd:
-                st.warning("Please fill all fields.")
+                st.session_state.signup_error = "Please fill all fields."
+                st.session_state.signup_success = False
             elif uname in st.session_state.users:
-                st.error("⚠️ Username already exists.")
+                st.session_state.signup_error = "⚠️ Username already exists."
+                st.session_state.signup_success = False
             elif pwd != confirm_pwd:
-                st.error("⚠️ Passwords do not match.")
+                st.session_state.signup_error = "⚠️ Passwords do not match."
+                st.session_state.signup_success = False
             else:
                 st.session_state.users[uname] = pwd
                 save_users(st.session_state.users)
-                st.success("✅ Signed up successfully! Now login to continue.")
-                st.session_state.page = "Login"
-                st.rerun()
+                st.session_state.signup_success = True
+                st.session_state.signup_error = ""
+
+    # Show messages AFTER form submit
+    if st.session_state.signup_success:
+        st.success("🎉 Signed up successfully! Please login to continue.")
+        if st.button("Go to Login"):
+            st.session_state.page = "Login"
+            st.rerun()
+
+    elif st.session_state.signup_error:
+        st.error(st.session_state.signup_error)
+
 
 # --- Dashboard Page ---
 def dashboard():
