@@ -110,28 +110,31 @@ def chat_interface():
     st.markdown("<h1>🌿 Solace AI</h1>", unsafe_allow_html=True)
     st.markdown("Welcome to your personal mental health companion and chat friend 💬")
 
+    # Show existing chat history
     for role, msg in st.session_state.chat_history:
         css = "user" if role == "user" else "bot"
         st.markdown(f"<div class='message {css}'>{msg}</div>", unsafe_allow_html=True)
 
+    # Chat input form
     with st.form("chat_form", clear_on_submit=True):
         user_input = st.text_input("Type your message", key="chat_input", label_visibility="collapsed")
         send = st.form_submit_button("Send")
-        if send and user_input.strip():
-            st.session_state.chat_history.append(("user", user_input))
-            with st.spinner("Solace is typing..."):
-                reply = get_chatbot_reply(st.session_state.chat_history)
-            st.session_state.chat_history.append(("bot", reply))
-            st.experimental_rerun()
 
+    # Process input after form is submitted
+    if send and user_input.strip():
+        st.session_state.chat_history.append(("user", user_input))
+        with st.spinner("Solace is typing..."):
+            reply = get_chatbot_reply(st.session_state.chat_history)
+        st.session_state.chat_history.append(("bot", reply))
+
+    # Sidebar logout
     st.sidebar.title("🔑 Account")
     st.sidebar.write(f"👤 Logged in as: `{st.session_state.username}`")
     if st.sidebar.button("Logout"):
         for key in ["authenticated", "username", "chat_history"]:
             st.session_state[key] = defaults[key]
         st.session_state.page = "Login"
-        st.success("👋 Logged out successfully.")
-        st.experimental_rerun()
+
 
 # === Main App Routing ===
 if not st.session_state.authenticated:
