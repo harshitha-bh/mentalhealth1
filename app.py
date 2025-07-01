@@ -123,9 +123,9 @@ def signup_page():
     # Show messages AFTER form submit
     if st.session_state.signup_success:
         st.success("🎉 Signed up successfully! Please login to continue.")
-        if st.button("Go to Login"):
-            st.session_state.page = "Login"
-            st.rerun()
+       # if st.button("Go to Login"):
+           # st.session_state.page = "Login"
+            #st.rerun()
 
     elif st.session_state.signup_error:
         st.error(st.session_state.signup_error)
