@@ -36,7 +36,7 @@ Welcome to **Solace AI** – a real-time, emotionally aware mental health compan
 
 | Signup Page | Login Page | Chatbot in Action |
 |-------------|------------|-------------------|
-| ![signup](images/signup.png) | ![login](images/login.png) | ![chatbot](images/chat.png) |
+| ![signup](/home/rguktrkvalley/Pictures/mental2.png) | ![login](/home/rguktrkvalley/Pictures/mental1.png) | ![chatbot](/home/rguktrkvalley/Pictures/mental4.png) |
 
 > _Tip: Place real screenshots in the `images/` folder with correct file names above._
 
