@@ -34,11 +34,15 @@ Welcome to **Solace AI** – a real-time, emotionally aware mental health compan
 
 ## 🖼️ Screenshots
 
-| Signup Page | Login Page | Chatbot in Action |
-|-------------|------------|-------------------|
-| ![signup](https://github.com/harshitha-bh/mentalhealth1/blob/main/images/mental2.png) | ![login](https://github.com/harshitha-bh/mentalhealth1/blob/main/images/mental1.png) | ![chatbot](https://github.com/harshitha-bh/mentalhealth1/blob/main/images/mental4.png) |
 
-> _Tip: Place real screenshots in the `images/` folder with correct file names above._
+SIGN UP
+ ![signup](https://github.com/harshitha-bh/mentalhealth1/blob/main/images/mental2.png)  
+ LOG IN
+ ![login](https://github.com/harshitha-bh/mentalhealth1/blob/main/images/mental1.png) 
+ CHATBOT
+ ![chatbot](https://github.com/harshitha-bh/mentalhealth1/blob/main/images/mental4.png) 
+
+>  real screenshots are placed in the `images/` folder with correct file names above._
 
 ---
 
