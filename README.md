@@ -47,8 +47,8 @@ SIGN UP
 ---
 
 ## 🌐 Live Demo
-
-🔗 [Click here to try Solace AI](https://your-solace-deployment-link.streamlit.app)  
+Start using Solace AI which supports u mentally and it will be a good friend too....(streamlit link is below to use the app)
+🔗 https://mentalhealth1-users.streamlit.app/           
 Feel better, one message at a time.
 
 ---
@@ -56,7 +56,7 @@ Feel better, one message at a time.
 ## 🔐 Prerequisites
 
 - Python 3.7 or higher  
-- OpenAI API key → [Get from OpenAI](https://platform.openai.com/account/api-keys)  
+- OpenAI API key → (https://platform.openai.com/account/api-keys)  
 - `streamlit` and `openai` installed
 
 ---
